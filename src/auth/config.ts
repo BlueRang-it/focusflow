@@ -1,17 +1,6 @@
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
-// Lazy load PrismaAdapter to avoid build-time module resolution failures when not installed
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let PrismaAdapterFunc: any | undefined;
-(async () => {
-  try {
-    const mod = await import("@auth/prisma-adapter");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    PrismaAdapterFunc = (mod as any).PrismaAdapter;
-  } catch {
-    PrismaAdapterFunc = undefined;
-  }
-})();
+// No Prisma adapter used in Supabase-only setup
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -67,7 +56,7 @@ if (process.env.GITHUB_ID && process.env.GITHUB_SECRET) {
 }
 
 export const authConfig = {
-  adapter: PrismaAdapterFunc ? PrismaAdapterFunc(prisma) : undefined,
+  adapter: undefined,
   providers,
   pages: {
     signIn: "/auth/login",
