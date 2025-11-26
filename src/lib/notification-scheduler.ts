@@ -237,9 +237,9 @@ export async function sendDailyDigest() {
         }),
       ]);
 
-      const completedTasks = tasks.filter(t => t.status === "COMPLETED").length;
+      const completedTasks = tasks.filter((t: { status: string }) => t.status === "COMPLETED").length;
       const avgRating = checkIns.length > 0
-        ? (checkIns.reduce((sum, ci) => sum + ci.productivityRating, 0) / checkIns.length).toFixed(1)
+        ? (checkIns.reduce((sum: number, ci: { productivityRating: number }) => sum + ci.productivityRating, 0) / checkIns.length).toFixed(1)
         : 0;
 
       await prisma.notification.create({

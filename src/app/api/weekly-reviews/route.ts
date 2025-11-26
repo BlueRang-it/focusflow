@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { startOfWeek, endOfWeek, subDays } from "date-fns";
 
+type CheckInLite = { productivityRating: number; createdAt: Date };
+type TaskLite = { timeSpent: number | null; status: string };
+
 const createWeeklyReviewSchema = z.object({
   weekStartDate: z.string().datetime(),
   weekEndDate: z.string().datetime(),
@@ -98,12 +101,12 @@ export async function POST(req: Request) {
 
     const averageProductivity =
       checkIns.length > 0
-        ? checkIns.reduce((sum, ci) => sum + ci.productivityRating, 0) /
+        ? checkIns.reduce((sum: number, ci: CheckInLite) => sum + ci.productivityRating, 0) /
           checkIns.length
         : 0;
 
     const totalHoursLogged =
-      completedTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0) / 60;
+      completedTasks.reduce((sum: number, task: TaskLite) => sum + (task.timeSpent || 0), 0) / 60;
 
     // Generate AI insights
     const insights = await generateWeeklyInsights(
