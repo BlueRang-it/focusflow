@@ -16,7 +16,7 @@ if (!supabaseUrl || !supabaseKey) {
 export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // Map model names to Supabase table names
-const tableMap: Record<string, string> = {
+const baseTableMap: Record<string, string> = {
   User: "users",
   Task: "tasks",
   CheckIn: "check_ins",
@@ -39,6 +39,18 @@ const tableMap: Record<string, string> = {
   Achievement: "achievements",
   Milestone: "milestones",
 };
+
+// Expand map to also include lowerCamelCase keys (Prisma client style)
+const tableMap: Record<string, string> = Object.keys(baseTableMap).reduce(
+  (acc, key) => {
+    acc[key] = baseTableMap[key];
+    // lowerCamelCase variant
+    const lowerCamel = key.charAt(0).toLowerCase() + key.slice(1);
+    acc[lowerCamel] = baseTableMap[key];
+    return acc;
+  },
+  {} as Record<string, string>
+);
 
 function getTable(modelName: string) {
   return tableMap[modelName] || modelName.toLowerCase() + "s";
