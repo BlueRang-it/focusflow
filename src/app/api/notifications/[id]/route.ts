@@ -4,8 +4,9 @@ import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await auth();
 
@@ -22,7 +23,7 @@ export async function PATCH(
     }
 
     const notification = await prisma.notification.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!notification || notification.userId !== user.id) {
@@ -36,7 +37,7 @@ export async function PATCH(
     const { isRead } = body;
 
     const updatedNotification = await prisma.notification.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         isRead: isRead ?? true,
         readAt: isRead ? new Date() : null,
@@ -55,8 +56,9 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await auth();
 
@@ -73,7 +75,7 @@ export async function DELETE(
     }
 
     const notification = await prisma.notification.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!notification || notification.userId !== user.id) {
@@ -84,7 +86,7 @@ export async function DELETE(
     }
 
     await prisma.notification.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });

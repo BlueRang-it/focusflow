@@ -15,8 +15,9 @@ const updateHabitSchema = z.object({
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await auth();
 
@@ -33,7 +34,7 @@ export async function PATCH(
     }
 
     const habit = await prisma.habit.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!habit || habit.userId !== user.id) {
@@ -44,7 +45,7 @@ export async function PATCH(
     const validatedData = updateHabitSchema.parse(body);
 
     const updatedHabit = await prisma.habit.update({
-      where: { id: params.id },
+      where: { id },
       data: validatedData,
       include: {
         goal: true,
@@ -74,8 +75,9 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await auth();
 
@@ -92,7 +94,7 @@ export async function DELETE(
     }
 
     const habit = await prisma.habit.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!habit || habit.userId !== user.id) {
@@ -100,7 +102,7 @@ export async function DELETE(
     }
 
     await prisma.habit.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });

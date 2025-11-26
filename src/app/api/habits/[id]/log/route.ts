@@ -12,8 +12,9 @@ const logHabitSchema = z.object({
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await auth();
 
@@ -30,7 +31,7 @@ export async function POST(
     }
 
     const habit = await prisma.habit.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!habit || habit.userId !== user.id) {
@@ -46,7 +47,7 @@ export async function POST(
     const habitLog = await prisma.habitLog.upsert({
       where: {
         habitId_date: {
-          habitId: params.id,
+          habitId: id,
           date: logDate,
         },
       },
@@ -55,7 +56,7 @@ export async function POST(
         notes,
       },
       create: {
-        habitId: params.id,
+        habitId: id,
         date: logDate,
         count,
         notes,
@@ -64,7 +65,7 @@ export async function POST(
 
     // Update habit statistics
     const allLogs = await prisma.habitLog.findMany({
-      where: { habitId: params.id },
+      where: { habitId: id },
       orderBy: { date: "desc" },
     });
 
@@ -119,7 +120,7 @@ export async function POST(
     }
 
     await prisma.habit.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         currentStreak,
         longestStreak,
