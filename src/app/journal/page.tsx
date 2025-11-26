@@ -99,14 +99,20 @@ export default function JournalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-96 h-96 bg-purple-500/10 rounded-full blur-3xl top-10 left-10 animate-pulse"></div>
+        <div className="absolute w-96 h-96 bg-pink-500/10 rounded-full blur-3xl bottom-10 right-10 animate-pulse" style={{animationDelay: '700ms'}}></div>
+      </div>
+      
+      <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
         <div className="mb-8 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">📔 Journal</h1>
-              <p className="text-gray-600">Reflect on your day and track your thoughts</p>
+              <h1 className="text-5xl font-bold text-white mb-2 drop-shadow-lg">📔 Journal</h1>
+              <p className="text-gray-300 text-lg">Reflect on your day and track your thoughts</p>
             </div>
             <HelpTooltip
               title="How to Use Journal"
@@ -127,14 +133,14 @@ export default function JournalPage() {
         </div>
 
         {/* Prompt Card */}
-        <Card className="mb-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+        <Card className="mb-6 bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 text-white border-4 border-purple-400 shadow-2xl">
           <CardContent>
-            <h3 className="text-xl font-semibold mb-2">✨ Daily Reflection Prompts</h3>
-            <ul className="space-y-1 text-sm">
-              <li>• What went well today?</li>
-              <li>• What challenges did you face?</li>
-              <li>• What are you grateful for?</li>
-              <li>• What will you improve tomorrow?</li>
+            <h3 className="text-2xl font-bold mb-3 drop-shadow-lg">✨ Daily Reflection Prompts</h3>
+            <ul className="space-y-2 text-base">
+              <li className="flex items-center gap-2"><span className="text-yellow-300">•</span> What went well today?</li>
+              <li className="flex items-center gap-2"><span className="text-yellow-300">•</span> What challenges did you face?</li>
+              <li className="flex items-center gap-2"><span className="text-yellow-300">•</span> What are you grateful for?</li>
+              <li className="flex items-center gap-2"><span className="text-yellow-300">•</span> What will you improve tomorrow?</li>
             </ul>
           </CardContent>
         </Card>
@@ -142,27 +148,27 @@ export default function JournalPage() {
         {/* Entries Timeline */}
         <div className="space-y-6">
           {entries.length === 0 ? (
-            <Card>
+            <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
               <CardContent className="text-center py-12">
-                <div className="text-6xl mb-4">📖</div>
-                <p className="text-gray-600 text-lg">No journal entries yet</p>
-                <p className="text-gray-500 text-sm mt-2">Start journaling to track your thoughts and reflections</p>
+                <div className="text-7xl mb-4">📖</div>
+                <p className="text-white text-xl font-semibold">No journal entries yet</p>
+                <p className="text-gray-300 text-base mt-2">Start journaling to track your thoughts and reflections</p>
               </CardContent>
             </Card>
           ) : (
             entries.map((entry) => (
-              <Card key={entry.id} className="hover:shadow-lg transition-shadow">
+              <Card key={entry.id} className="bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/20 hover:border-white/30 hover:shadow-2xl hover:shadow-purple-500/20 transition-all transform hover:scale-[1.02]">
                 <CardContent>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="text-3xl">
+                      <div className="text-4xl drop-shadow-lg">
                         {entry.mood ? moodEmojis[entry.mood as keyof typeof moodEmojis] || "📝" : "📝"}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-base font-semibold text-white drop-shadow">
                           {format(new Date(entry.createdAt), "EEEE, MMMM d, yyyy")}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-sm text-gray-300">
                           {format(new Date(entry.createdAt), "h:mm a")}
                         </p>
                       </div>
@@ -174,7 +180,7 @@ export default function JournalPage() {
                     )}
                   </div>
                   <div className="prose prose-sm max-w-none">
-                    <p className="text-gray-700 whitespace-pre-wrap">{entry.content}</p>
+                    <p className="text-gray-200 whitespace-pre-wrap text-base leading-relaxed">{entry.content}</p>
                   </div>
                 </CardContent>
               </Card>

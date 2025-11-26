@@ -176,14 +176,20 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-96 h-96 bg-blue-500/10 rounded-full blur-3xl top-10 -left-20 animate-pulse"></div>
+        <div className="absolute w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl bottom-10 -right-20 animate-pulse" style={{animationDelay: '700ms'}}></div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
         <div className="mb-8 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">📋 Tasks</h1>
-              <p className="text-gray-600">Manage your tasks and stay organized</p>
+              <h1 className="text-5xl font-bold text-white mb-2 drop-shadow-lg">📋 Tasks</h1>
+              <p className="text-gray-300 text-lg">Manage your tasks and stay organized</p>
             </div>
             <HelpTooltip
               title="How to Use Tasks"
@@ -206,42 +212,42 @@ export default function TasksPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card className="bg-white">
+          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/20 transition-all">
             <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{taskStats.total}</div>
-              <div className="text-sm text-gray-600">Total Tasks</div>
+              <div className="text-4xl font-bold text-white drop-shadow-lg">{taskStats.total}</div>
+              <div className="text-sm text-gray-300 font-semibold">Total Tasks</div>
             </CardContent>
           </Card>
-          <Card className="bg-blue-50">
+          <Card className="bg-blue-500/20 backdrop-blur-lg border border-blue-400/30 hover:border-blue-400/50 transition-all">
             <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{taskStats.todo}</div>
-              <div className="text-sm text-blue-800">To Do</div>
+              <div className="text-4xl font-bold text-blue-300 drop-shadow-lg">{taskStats.todo}</div>
+              <div className="text-sm text-blue-200 font-semibold">To Do</div>
             </CardContent>
           </Card>
-          <Card className="bg-yellow-50">
+          <Card className="bg-yellow-500/20 backdrop-blur-lg border border-yellow-400/30 hover:border-yellow-400/50 transition-all">
             <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{taskStats.inProgress}</div>
-              <div className="text-sm text-yellow-800">In Progress</div>
+              <div className="text-4xl font-bold text-yellow-300 drop-shadow-lg">{taskStats.inProgress}</div>
+              <div className="text-sm text-yellow-200 font-semibold">In Progress</div>
             </CardContent>
           </Card>
-          <Card className="bg-green-50">
+          <Card className="bg-green-500/20 backdrop-blur-lg border border-green-400/30 hover:border-green-400/50 transition-all">
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">{taskStats.completed}</div>
-              <div className="text-sm text-green-800">Completed</div>
+              <div className="text-4xl font-bold text-green-300 drop-shadow-lg">{taskStats.completed}</div>
+              <div className="text-sm text-green-200 font-semibold">Completed</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Filters */}
-        <div className="mb-6 flex gap-2">
+        <div className="mb-6 flex gap-2 flex-wrap">
           {(["ALL", "TODO", "IN_PROGRESS", "COMPLETED"] as const).map((filterOption) => (
             <button
               key={filterOption}
               onClick={() => setFilter(filterOption)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`px-6 py-3 rounded-xl font-semibold transition-all transform hover:scale-105 ${
                 filter === filterOption
-                  ? "bg-blue-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/50"
+                  : "bg-white/10 backdrop-blur text-white border border-white/20 hover:bg-white/20"
               }`}
             >
               {filterOption.replace("_", " ")}
@@ -252,21 +258,21 @@ export default function TasksPage() {
         {/* Tasks List */}
         <div className="space-y-4">
           {filteredTasks.length === 0 ? (
-            <Card>
+            <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
               <CardContent className="text-center py-12">
-                <div className="text-6xl mb-4">📭</div>
-                <p className="text-gray-600 text-lg">No tasks found</p>
-                <p className="text-gray-500 text-sm mt-2">Create your first task to get started!</p>
+                <div className="text-7xl mb-4">📭</div>
+                <p className="text-white text-xl font-semibold">No tasks found</p>
+                <p className="text-gray-300 text-base mt-2">Create your first task to get started!</p>
               </CardContent>
             </Card>
           ) : (
             filteredTasks.map((task) => (
-              <Card key={task.id} className="hover:shadow-lg transition-shadow">
+              <Card key={task.id} className="bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/20 hover:border-white/30 hover:shadow-2xl hover:shadow-blue-500/20 transition-all transform hover:scale-[1.02]">
                 <CardContent>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
+                        <h3 className="text-xl font-semibold text-white drop-shadow">{task.title}</h3>
                         <span className={`px-2 py-1 rounded text-xs font-medium border ${getPriorityColor(task.priority)}`}>
                           {task.priority}
                         </span>
@@ -275,11 +281,11 @@ export default function TasksPage() {
                         </span>
                       </div>
                       {task.description && (
-                        <p className="text-gray-600 mb-3">{task.description}</p>
+                        <p className="text-gray-300 mb-3">{task.description}</p>
                       )}
                       {task.dueDate && (
                         <div className="flex items-center gap-2">
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-300">
                             📅 Due: {format(new Date(task.dueDate), "MMM d, yyyy")}
                           </p>
                           {(() => {

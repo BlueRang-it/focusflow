@@ -241,8 +241,14 @@ export default function EnhancedDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
-      <div className="max-w-[1800px] mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6 relative overflow-hidden">
+      {/* Animated Background Blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-96 h-96 bg-blue-500/10 rounded-full blur-3xl top-20 left-20 animate-pulse"></div>
+        <div className="absolute w-96 h-96 bg-purple-500/10 rounded-full blur-3xl bottom-20 right-20 animate-pulse" style={{animationDelay: '700ms'}}></div>
+      </div>
+      
+      <div className="max-w-[1800px] mx-auto relative z-10">
         {/* Header with Real-time Clock */}
         <div className="mb-8 flex justify-between items-start">
           <div className="flex items-center gap-3">

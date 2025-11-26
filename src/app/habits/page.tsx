@@ -129,10 +129,10 @@ export default function HabitsPage() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Habits & Routines
+              <h1 className="text-5xl font-bold text-white mb-2 drop-shadow-lg">
+                🎯 Habits & Routines
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-300 text-lg">
                 Build consistency and track your daily habits
               </p>
             </div>
@@ -152,9 +152,9 @@ export default function HabitsPage() {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
           >
-            + New Habit
+            ➕ New Habit
           </button>
         </div>
 
