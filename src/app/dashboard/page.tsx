@@ -145,17 +145,17 @@ export default function Dashboard() {
   ) => {
     const messages = {
       ahead: [
-        "You&apos;re crushing your goals! Keep this momentum going! 🔥",
-        "Outstanding progress! You&apos;re absolutely dominating! 💪",
-        "Wow! You&apos;re flying ahead of pace! Amazing work! 🚀",
+        "You're crushing your goals! Keep this momentum going! 🔥",
+        "Outstanding progress! You're absolutely dominating! 💪",
+        "Wow! You're flying ahead of pace! Amazing work! 🚀",
       ],
       "on-track": [
-        "Great work! You&apos;re right on pace! Keep it up! ✨",
-        "You&apos;re doing amazing! Let&apos;s stay consistent! 🎯",
+        "Great work! You're right on pace! Keep it up! ✨",
+        "You're doing amazing! Let's stay consistent! 🎯",
         "Fantastic! Keep this energy going! 💪",
       ],
       behind: [
-        "You&apos;ve got this! Let&apos;s refocus and catch up! 🎯",
+        "You've got this! Let's refocus and catch up! 🎯",
         "No worries! Consistency beats perfection. Keep going! 💪",
         "Time to shift into gear! You can turn this around! 🔥",
       ],
@@ -273,7 +273,7 @@ export default function Dashboard() {
           {/* Task Progress */}
           <div className="lg:col-span-2">
             <Card>
-              <CardHeader title="Daily Task Progress" subtitle="You&apos;re doing great today!" />
+              <CardHeader title="Daily Task Progress" subtitle="You're doing great today!" />
               <CardContent>
                 <ProgressBar
                   progress={dailyProgress?.progressPercentage || 0}
@@ -283,13 +283,13 @@ export default function Dashboard() {
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-700">Hours Logged</span>
                     <span className="font-semibold text-gray-900">
-                      {dailyProgress?.hoursLogged.toFixed(1)}h / 8h
+                      {dailyProgress?.hoursLogged?.toFixed(1) || 0}h / 8h
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-700">Productivity Rating</span>
                     <span className="font-semibold text-blue-600 text-lg">
-                      {dailyProgress?.averageRating.toFixed(1)}/10
+                      {dailyProgress?.averageRating?.toFixed(1) || 0}/10
                     </span>
                   </div>
                 </div>
