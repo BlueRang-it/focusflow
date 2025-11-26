@@ -139,6 +139,26 @@ function makeModelProxy(modelName: string) {
       if (res.error) throw res.error;
       return res.data?.[0] ?? null;
     },
+    upsert: async ({ where, create, update }: { where: Record<string, any>; create: Record<string, any>; update: Record<string, any> }) => {
+      // Try to find existing record
+      let q: any = supabase.from(table).select("*");
+      q = applyWhere(q, where);
+      const existing = await q.maybeSingle();
+      
+      if (existing.data) {
+        // Update existing record
+        let updateQuery: any = supabase.from(table).update(update).select();
+        updateQuery = applyWhere(updateQuery, where);
+        const res = await updateQuery.single();
+        if (res.error) throw res.error;
+        return res.data as any;
+      } else {
+        // Create new record
+        const res = await supabase.from(table).insert(create).select().single();
+        if (res.error) throw res.error;
+        return res.data as any;
+      }
+    },
   } as any;
 }
 
