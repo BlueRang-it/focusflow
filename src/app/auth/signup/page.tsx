@@ -27,19 +27,25 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
+      console.log("Creating account for:", email);
+      
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
       });
 
+      const data = await response.json();
+      console.log("Signup response:", data);
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || "Failed to create account");
       }
 
-      router.push("/auth/login?message=Account created successfully");
+      console.log("Account created successfully");
+      router.push("/auth/login?message=Account created successfully. Please sign in.");
     } catch (err) {
+      console.error("Signup error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
