@@ -7,6 +7,10 @@ import { Card, CardHeader, CardContent } from "@/components/Card";
 import { Button } from "@/components/Button";
 import { ProgressBar, StatBox } from "@/components/Progress";
 import { CheckInModal } from "@/components/CheckInModal";
+import NotificationBell from "@/components/NotificationBell";
+import BadgeDisplay from "@/components/BadgeDisplay";
+import XPProgressBar from "@/components/XPProgressBar";
+import AchievementToast from "@/components/AchievementToast";
 import { format } from "date-fns";
 
 interface DailyProgress {
@@ -19,6 +23,28 @@ interface DailyProgress {
   currentStreak: number;
 }
 
+interface Badge {
+  id: string;
+  name: string;
+  description?: string | null;
+  icon?: string | null;
+  criterion: string;
+  earnedAt: string;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  priority: string;
+  dueDate?: string | null;
+}
+
+interface UserData {
+  level: number;
+  xp: number;
+  streak: number;
+}
+
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -26,35 +52,92 @@ export default function Dashboard() {
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [motivationalMessage, setMotivationalMessage] = useState("");
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [nextTask, setNextTask] = useState<Task | null>(null);
+  const [workdayRemaining, setWorkdayRemaining] = useState("");
+  const [paceStatus, setPaceStatus] = useState<"ahead" | "on-track" | "behind">("on-track");
+  const [achievement, setAchievement] = useState<any>(null);
 
   const fetchDashboardData = useCallback(async () => {
     if (!session?.user?.id) return;
 
     try {
-      const response = await fetch(
+      // Fetch analytics
+      const analyticsResponse = await fetch(
         `/api/analytics?period=week&userId=${session.user.id}`
       );
-      const data = await response.json();
+      const analyticsData = await analyticsResponse.json();
+      
+      // Fetch today's tasks
+      const today = format(new Date(), "yyyy-MM-dd");
+      const tasksResponse = await fetch(`/api/tasks?date=${today}`);
+      const tasksData = await tasksResponse.json();
+      
+      const totalTasks = tasksData.length || 5;
+      const completedTasks = tasksData.filter((t: Task) => t.status === "COMPLETED").length;
+      
       setDailyProgress({
-        completedTasks: data.metrics.tasksCompleted || 0,
-        totalTasks: 5, // Default estimate
-        progressPercentage: (data.metrics.tasksCompleted / 5) * 100,
-        checkInCount: data.metrics.checkInsCount || 0,
-        averageRating: data.metrics.averageRating || 0,
-        hoursLogged: data.metrics.hoursLogged || 0,
-        currentStreak: data.user.streak || 0,
+        completedTasks,
+        totalTasks,
+        progressPercentage: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0,
+        checkInCount: analyticsData.metrics.checkInsCount || 0,
+        averageRating: analyticsData.metrics.averageRating || 0,
+        hoursLogged: analyticsData.metrics.hoursLogged || 0,
+        currentStreak: analyticsData.user.streak || 0,
       });
 
-      // Generate motivational message based on pace
-      const paceStatus =
-        data.metrics.tasksCompleted > 3 ? "ahead" : "on-track";
-      generateMotivationalMessage(paceStatus);
+      setUserData({
+        level: analyticsData.user.level || 1,
+        xp: analyticsData.user.xp || 0,
+        streak: analyticsData.user.streak || 0,
+      });
+
+      // Find next priority task
+      const incompleteTasks = tasksData.filter((t: Task) => t.status !== "COMPLETED");
+      if (incompleteTasks.length > 0) {
+        setNextTask(incompleteTasks[0]);
+      }
+
+      // Calculate workday remaining
+      calculateWorkdayRemaining();
+
+      // Determine pace status
+      const currentHour = new Date().getHours();
+      const workHoursElapsed = Math.max(0, currentHour - 9);
+      const expectedTasks = Math.floor((workHoursElapsed / 8) * totalTasks);
+      
+      let newPaceStatus: "ahead" | "on-track" | "behind" = "on-track";
+      if (completedTasks > expectedTasks + 1) {
+        newPaceStatus = "ahead";
+      } else if (completedTasks < expectedTasks - 1) {
+        newPaceStatus = "behind";
+      }
+      setPaceStatus(newPaceStatus);
+
+      generateMotivationalMessage(newPaceStatus);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }
   }, [session?.user?.id]);
+
+  const calculateWorkdayRemaining = () => {
+    const now = new Date();
+    const endOfWorkday = new Date();
+    endOfWorkday.setHours(17, 0, 0, 0); // 5 PM
+
+    const diffMs = endOfWorkday.getTime() - now.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (diffMs <= 0) {
+      setWorkdayRemaining("Workday Complete");
+    } else {
+      setWorkdayRemaining(`${diffHours}h ${diffMinutes}m remaining`);
+    }
+  };
 
   const generateMotivationalMessage = (
     paceStatus: string
@@ -88,12 +171,38 @@ export default function Dashboard() {
       router.push("/auth/login");
     } else if (status === "authenticated") {
       fetchDashboardData();
+      
+      // Update workday timer every minute
+      const timer = setInterval(calculateWorkdayRemaining, 60000);
+      return () => clearInterval(timer);
     }
   }, [status, router, fetchDashboardData]);
 
+  const getPaceStatusColor = () => {
+    switch (paceStatus) {
+      case "ahead":
+        return "text-green-600 bg-green-50 border-green-200";
+      case "behind":
+        return "text-red-600 bg-red-50 border-red-200";
+      default:
+        return "text-blue-600 bg-blue-50 border-blue-200";
+    }
+  };
+
+  const getPaceStatusIcon = () => {
+    switch (paceStatus) {
+      case "ahead":
+        return "🚀";
+      case "behind":
+        return "⚠️";
+      default:
+        return "✅";
+    }
+  };
+
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-700">Loading your dashboard...</p>
@@ -217,22 +326,20 @@ export default function Dashboard() {
         {/* Streak & Gamification */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
-            <CardHeader title="🏆 Achievements" subtitle="Keep the streak alive!" />
+            <CardHeader title="🏆 Badges & Achievements" subtitle="Your accomplishments" />
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
-                  <span>🔥 3-Day Streak</span>
-                  <span className="text-xs font-semibold px-2 py-1 bg-yellow-200 rounded-full">
-                    Unlocked
-                  </span>
+              {badges.length > 0 ? (
+                <BadgeDisplay badges={badges} compact={true} />
+              ) : (
+                <div className="text-center py-6 text-gray-500">
+                  <p className="text-sm">Complete achievements to earn badges!</p>
+                  <div className="mt-3 text-xs space-y-1">
+                    <p>🔥 Complete 3-day streak</p>
+                    <p>✅ Log your first check-in</p>
+                    <p>📋 Complete your first task</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-gray-300">
-                  <span>⭐ 7-Day Streak</span>
-                  <span className="text-xs font-semibold px-2 py-1 bg-gray-200 rounded-full">
-                    {Math.max(0, 7 - (dailyProgress?.currentStreak || 0))} days away
-                  </span>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -246,6 +353,46 @@ export default function Dashboard() {
           </Card>
         </div>
 
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader title="⚡ Quick Actions" subtitle="Navigate to key features" />
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <button
+                onClick={() => router.push("/habits")}
+                className="p-4 bg-green-50 border-2 border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+              >
+                <div className="text-3xl mb-2">🎯</div>
+                <div className="text-sm font-semibold text-green-900">Habits</div>
+              </button>
+              
+              <button
+                onClick={() => router.push("/weekly-review")}
+                className="p-4 bg-purple-50 border-2 border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+              >
+                <div className="text-3xl mb-2">📊</div>
+                <div className="text-sm font-semibold text-purple-900">Weekly Review</div>
+              </button>
+              
+              <button
+                onClick={() => router.push("/settings")}
+                className="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className="text-3xl mb-2">⚙️</div>
+                <div className="text-sm font-semibold text-gray-900">Settings</div>
+              </button>
+              
+              <button
+                onClick={() => setShowCheckIn(true)}
+                className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <div className="text-3xl mb-2">📝</div>
+                <div className="text-sm font-semibold text-blue-900">Check In</div>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Check-In Modal */}
         {showCheckIn && (
           <CheckInModal
@@ -256,6 +403,12 @@ export default function Dashboard() {
             }}
           />
         )}
+
+        {/* Achievement Toast */}
+        <AchievementToast
+          achievement={achievement}
+          onClose={() => setAchievement(null)}
+        />
       </div>
     </div>
   );
