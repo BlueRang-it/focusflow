@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { z } from "zod";
 
 type CheckInLite = { productivityRating: number; createdAt: Date };
@@ -29,21 +29,24 @@ export async function GET() {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return Response.json({ error: "User not found" }, { status: 404 });
     }
 
-    const sessions = await prisma.aICoachSession.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    });
+    const { data: sessions } = await supabase
+      .from("ai_coach_sessions")
+      .select("*")
+      .eq("userId", user.id)
+      .order("createdAt", { ascending: false })
+      .limit(10);
 
-    return Response.json(sessions);
+    return Response.json(sessions || []);
   } catch (error) {
     console.error("AI Coach GET error:", error);
     return Response.json(
@@ -60,9 +63,11 @@ export async function POST(req: Request) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return Response.json({ error: "User not found" }, { status: 404 });
@@ -71,23 +76,30 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { sessionType, context } = AICoachSchema.parse(body);
 
-    const recentCheckIns = await prisma.checkIn.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "desc" },
-      take: 30,
-    });
+    const [checkInsRes, tasksRes, moodRes] = await Promise.all([
+      supabase
+        .from("check_ins")
+        .select("*")
+        .eq("userId", user.id)
+        .order("createdAt", { ascending: false })
+        .limit(30),
+      supabase
+        .from("tasks")
+        .select("*")
+        .eq("userId", user.id)
+        .order("createdAt", { ascending: false })
+        .limit(20),
+      supabase
+        .from("mood_entries")
+        .select("*")
+        .eq("userId", user.id)
+        .order("recordedAt", { ascending: false })
+        .limit(14),
+    ]);
 
-    const recentTasks = await prisma.task.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    });
-
-    const moodEntries = await prisma.moodEntry.findMany({
-      where: { userId: user.id },
-      orderBy: { recordedAt: "desc" },
-      take: 14,
-    });
+    const recentCheckIns = checkInsRes.data || [];
+    const recentTasks = tasksRes.data || [];
+    const moodEntries = moodRes.data || [];
 
     let analysis = "";
     let prediction = "";
@@ -139,8 +151,9 @@ export async function POST(req: Request) {
           : "Your stress levels are healthy. Keep up the balance!";
     }
 
-    const aiSession = await prisma.aICoachSession.create({
-      data: {
+    const { data: aiSession, error } = await supabase
+      .from("ai_coach_sessions")
+      .insert({
         userId: user.id,
         sessionType,
         context,
@@ -148,8 +161,11 @@ export async function POST(req: Request) {
         prediction,
         recommendation,
         motivationalMessage,
-      },
-    });
+      })
+      .select("*")
+      .single();
+
+    if (error) throw error;
 
     return Response.json(aiSession, { status: 201 });
   } catch (error) {

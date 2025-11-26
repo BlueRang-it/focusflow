@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { z } from "zod";
 import { startOfDay } from "date-fns";
 
@@ -22,17 +22,21 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const habit = await prisma.habit.findUnique({
-      where: { id },
-    });
+    const { data: habit } = await supabase
+      .from("habits")
+      .select("*")
+      .eq("id", id)
+      .single();
 
     if (!habit || habit.userId !== user.id) {
       return NextResponse.json({ error: "Habit not found" }, { status: 404 });
@@ -43,31 +47,50 @@ export async function POST(
 
     const logDate = date ? startOfDay(new Date(date)) : startOfDay(new Date());
 
-    // Upsert habit log (update if exists for same date, create if not)
-    const habitLog = await prisma.habitLog.upsert({
-      where: {
-        habitId_date: {
+    // Check if log exists for this date
+    const { data: existingLog } = await supabase
+      .from("habit_logs")
+      .select("*")
+      .eq("habitId", id)
+      .eq("date", logDate.toISOString())
+      .single();
+
+    let habitLog;
+    if (existingLog) {
+      // Update existing log
+      const { data, error } = await supabase
+        .from("habit_logs")
+        .update({ count, notes })
+        .eq("habitId", id)
+        .eq("date", logDate.toISOString())
+        .select("*")
+        .single();
+      if (error) throw error;
+      habitLog = data;
+    } else {
+      // Create new log
+      const { data, error } = await supabase
+        .from("habit_logs")
+        .insert({
           habitId: id,
-          date: logDate,
-        },
-      },
-      update: {
-        count,
-        notes,
-      },
-      create: {
-        habitId: id,
-        date: logDate,
-        count,
-        notes,
-      },
-    });
+          date: logDate.toISOString(),
+          count,
+          notes,
+        })
+        .select("*")
+        .single();
+      if (error) throw error;
+      habitLog = data;
+    }
 
     // Update habit statistics
-    const allLogs = await prisma.habitLog.findMany({
-      where: { habitId: id },
-      orderBy: { date: "desc" },
-    });
+    const { data: allLogs } = await supabase
+      .from("habit_logs")
+      .select("*")
+      .eq("habitId", id)
+      .order("date", { ascending: false });
+    
+    if (!allLogs) throw new Error("Failed to fetch habit logs");
 
     // Calculate current streak
     let currentStreak = 0;
@@ -119,22 +142,24 @@ export async function POST(
       }
     }
 
-    await prisma.habit.update({
-      where: { id },
-      data: {
+    const totalCompleted = allLogs.reduce((sum: number, log: { count: number }) => sum + log.count, 0);
+    
+    await supabase
+      .from("habits")
+      .update({
         currentStreak,
         longestStreak,
-        totalCompleted: allLogs.reduce((sum: number, log: { count: number }) => sum + log.count, 0),
-      },
-    });
+        totalCompleted,
+      })
+      .eq("id", id);
 
     // Award XP to user
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        xp: { increment: 5 },
-      },
-    });
+    await supabase
+      .from("users")
+      .update({
+        xp: (user.xp || 0) + 5,
+      })
+      .eq("id", user.id);
 
     return NextResponse.json(habitLog, { status: 201 });
   } catch (error) {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { z } from "zod";
 
 const updatePreferencesSchema = z.object({
@@ -24,28 +24,36 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: {
-        preferences: true,
-      },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Get user preferences
+    const { data: preferences } = await supabase
+      .from("user_preferences")
+      .select("*")
+      .eq("userId", user.id)
+      .single();
+
     // If preferences don't exist, create default ones
-    if (!user.preferences) {
-      const preferences = await prisma.userPreferences.create({
-        data: {
-          userId: user.id,
-        },
-      });
-      return NextResponse.json(preferences);
+    if (!preferences) {
+      const { data: newPreferences, error } = await supabase
+        .from("user_preferences")
+        .insert({ userId: user.id })
+        .select("*")
+        .single();
+      
+      if (error) throw error;
+      return NextResponse.json(newPreferences);
     }
 
-    return NextResponse.json(user.preferences);
+    return NextResponse.json(preferences);
   } catch (error) {
     console.error("Get preferences error:", error);
     return NextResponse.json(
@@ -63,9 +71,11 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -74,14 +84,37 @@ export async function PUT(req: Request) {
     const body = await req.json();
     const validatedData = updatePreferencesSchema.parse(body);
 
-    const preferences = await prisma.userPreferences.upsert({
-      where: { userId: user.id },
-      update: validatedData,
-      create: {
-        userId: user.id,
-        ...validatedData,
-      },
-    });
+    // Check if preferences exist
+    const { data: existing } = await supabase
+      .from("user_preferences")
+      .select("*")
+      .eq("userId", user.id)
+      .single();
+
+    let preferences;
+    if (existing) {
+      // Update existing
+      const { data, error } = await supabase
+        .from("user_preferences")
+        .update(validatedData)
+        .eq("userId", user.id)
+        .select("*")
+        .single();
+      if (error) throw error;
+      preferences = data;
+    } else {
+      // Create new
+      const { data, error } = await supabase
+        .from("user_preferences")
+        .insert({
+          userId: user.id,
+          ...validatedData,
+        })
+        .select("*")
+        .single();
+      if (error) throw error;
+      preferences = data;
+    }
 
     return NextResponse.json(preferences);
   } catch (error) {

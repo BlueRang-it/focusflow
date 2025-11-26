@@ -1,19 +1,20 @@
 // Notification Scheduler - Background job logic
 // In production, this would run as a cron job or background worker
 
-import { prisma } from "./prisma";
+import { supabase } from "./supabase";
 
 export async function sendHourlyCheckInReminders() {
   try {
     // Get all users with notifications enabled
-    const users = await prisma.user.findMany({
-      where: {
-        notificationsEnabled: true,
-      },
-      include: {
-        preferences: true,
-      },
-    });
+    const { data: users } = await supabase
+      .from("users")
+      .select(`
+        *,
+        preferences:user_preferences(*)
+      `)
+      .eq("notificationsEnabled", true);
+    
+    if (!users) return;
 
     const currentHour = new Date().getHours();
     
@@ -24,31 +25,30 @@ export async function sendHourlyCheckInReminders() {
 
     for (const user of users) {
       // Skip if user disabled push notifications
-      if (user.preferences && !user.preferences.enablePushNotifications) {
+      const prefs = Array.isArray(user.preferences) ? user.preferences[0] : user.preferences;
+      if (prefs && !prefs.enablePushNotifications) {
         continue;
       }
 
       // Check if user has already checked in this hour
-      const lastCheckIn = await prisma.checkIn.findFirst({
-        where: {
-          userId: user.id,
-          createdAt: {
-            gte: new Date(new Date().setMinutes(0, 0, 0)),
-          },
-        },
-      });
+      const { data: checkIns } = await supabase
+        .from("check_ins")
+        .select("*")
+        .eq("userId", user.id)
+        .gte("createdAt", new Date(new Date().setMinutes(0, 0, 0)).toISOString())
+        .limit(1);
 
-      if (!lastCheckIn) {
+      if (!checkIns || checkIns.length === 0) {
         // Create notification
-        await prisma.notification.create({
-          data: {
+        await supabase
+          .from("notifications")
+          .insert({
             userId: user.id,
             title: "⏰ Hourly Check-In Reminder",
             message: "Time for your hourly productivity check-in! What did you accomplish this hour?",
             type: "CHECK_IN_REMINDER",
             actionUrl: "/dashboard",
-          },
-        });
+          });
       }
     }
 
@@ -60,14 +60,15 @@ export async function sendHourlyCheckInReminders() {
 
 export async function sendDailyMotivation() {
   try {
-    const users = await prisma.user.findMany({
-      where: {
-        notificationsEnabled: true,
-      },
-      include: {
-        preferences: true,
-      },
-    });
+    const { data: users } = await supabase
+      .from("users")
+      .select(`
+        *,
+        preferences:user_preferences(*)
+      `)
+      .eq("notificationsEnabled", true);
+    
+    if (!users) return;
 
     const motivationalMessages = [
       "🌟 New day, new opportunities! Let's make today count!",
@@ -78,21 +79,22 @@ export async function sendDailyMotivation() {
     ];
 
     for (const user of users) {
-      if (user.preferences && !user.preferences.enableMotivationalMessages) {
+      const prefs = Array.isArray(user.preferences) ? user.preferences[0] : user.preferences;
+      if (prefs && !prefs.enableMotivationalMessages) {
         continue;
       }
 
       const message = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
 
-      await prisma.notification.create({
-        data: {
+      await supabase
+        .from("notifications")
+        .insert({
           userId: user.id,
           title: "Good Morning!",
           message,
           type: "MOTIVATIONAL",
           actionUrl: "/dashboard",
-        },
-      });
+        });
     }
 
     console.log(`✅ Sent daily motivation to ${users.length} users`);
@@ -103,11 +105,12 @@ export async function sendDailyMotivation() {
 
 export async function detectInactivity() {
   try {
-    const users = await prisma.user.findMany({
-      where: {
-        notificationsEnabled: true,
-      },
-    });
+    const { data: users } = await supabase
+      .from("users")
+      .select("*")
+      .eq("notificationsEnabled", true);
+    
+    if (!users) return;
 
     const currentHour = new Date().getHours();
     
@@ -118,25 +121,22 @@ export async function detectInactivity() {
 
     for (const user of users) {
       // Get check-ins from last 3 hours
-      const recentCheckIns = await prisma.checkIn.findMany({
-        where: {
-          userId: user.id,
-          createdAt: {
-            gte: new Date(Date.now() - 3 * 60 * 60 * 1000),
-          },
-        },
-      });
+      const { data: recentCheckIns } = await supabase
+        .from("check_ins")
+        .select("*")
+        .eq("userId", user.id)
+        .gte("createdAt", new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString());
 
-      if (recentCheckIns.length === 0) {
-        await prisma.notification.create({
-          data: {
+      if (!recentCheckIns || recentCheckIns.length === 0) {
+        await supabase
+          .from("notifications")
+          .insert({
             userId: user.id,
             title: "⚠️ Inactivity Alert",
             message: "We haven't heard from you in a while. Stay on track with a quick check-in!",
             type: "INACTIVITY_ALERT",
             actionUrl: "/dashboard",
-          },
-        });
+          });
       }
     }
 
@@ -148,51 +148,53 @@ export async function detectInactivity() {
 
 export async function checkStreakMilestones() {
   try {
-    const users = await prisma.user.findMany({
-      where: {
-        notificationsEnabled: true,
-      },
-      include: {
-        preferences: true,
-      },
-    });
+    const { data: users } = await supabase
+      .from("users")
+      .select(`
+        *,
+        preferences:user_preferences(*)
+      `)
+      .eq("notificationsEnabled", true);
+    
+    if (!users) return;
 
     const milestones = [3, 7, 14, 30, 60, 100];
 
     for (const user of users) {
-      if (user.preferences && !user.preferences.enableStreakAlerts) {
+      const prefs = Array.isArray(user.preferences) ? user.preferences[0] : user.preferences;
+      if (prefs && !prefs.enableStreakAlerts) {
         continue;
       }
 
       if (milestones.includes(user.streak)) {
-        await prisma.notification.create({
-          data: {
+        await supabase
+          .from("notifications")
+          .insert({
             userId: user.id,
             title: `🔥 ${user.streak}-Day Streak Milestone!`,
             message: `Incredible! You've maintained a ${user.streak}-day streak. Keep up the amazing consistency!`,
             type: "STREAK_MILESTONE",
             actionUrl: "/dashboard",
-          },
-        });
+          });
 
         // Award achievement
-        await prisma.achievement.create({
-          data: {
+        await supabase
+          .from("achievements")
+          .insert({
             userId: user.id,
             type: user.streak === 3 ? "STREAK_3" : user.streak === 7 ? "STREAK_7" : user.streak === 30 ? "STREAK_30" : "CONSISTENCY_MONTH",
             title: `${user.streak}-Day Streak`,
             description: `Maintained productivity for ${user.streak} consecutive days`,
             xpReward: user.streak * 10,
-          },
-        });
+          });
 
         // Add XP
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            xp: { increment: user.streak * 10 },
-          },
-        });
+        await supabase
+          .from("users")
+          .update({
+            xp: (user.xp || 0) + (user.streak * 10),
+          })
+          .eq("id", user.id);
       }
     }
 
@@ -204,53 +206,56 @@ export async function checkStreakMilestones() {
 
 export async function sendDailyDigest() {
   try {
-    const users = await prisma.user.findMany({
-      where: {
-        notificationsEnabled: true,
-      },
-      include: {
-        preferences: true,
-      },
-    });
+    const { data: users } = await supabase
+      .from("users")
+      .select(`
+        *,
+        preferences:user_preferences(*)
+      `)
+      .eq("notificationsEnabled", true);
+    
+    if (!users) return;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     for (const user of users) {
-      if (user.preferences && !user.preferences.enableDailyDigest) {
+      const prefs = Array.isArray(user.preferences) ? user.preferences[0] : user.preferences;
+      if (prefs && !prefs.enableDailyDigest) {
         continue;
       }
 
       // Get today's stats
-      const [tasks, checkIns] = await Promise.all([
-        prisma.task.findMany({
-          where: {
-            userId: user.id,
-            createdAt: { gte: today },
-          },
-        }),
-        prisma.checkIn.findMany({
-          where: {
-            userId: user.id,
-            createdAt: { gte: today },
-          },
-        }),
+      const [tasksRes, checkInsRes] = await Promise.all([
+        supabase
+          .from("tasks")
+          .select("*")
+          .eq("userId", user.id)
+          .gte("createdAt", today.toISOString()),
+        supabase
+          .from("check_ins")
+          .select("*")
+          .eq("userId", user.id)
+          .gte("createdAt", today.toISOString()),
       ]);
+
+      const tasks = tasksRes.data || [];
+      const checkIns = checkInsRes.data || [];
 
       const completedTasks = tasks.filter((t: { status: string }) => t.status === "COMPLETED").length;
       const avgRating = checkIns.length > 0
         ? (checkIns.reduce((sum: number, ci: { productivityRating: number }) => sum + ci.productivityRating, 0) / checkIns.length).toFixed(1)
         : 0;
 
-      await prisma.notification.create({
-        data: {
+      await supabase
+        .from("notifications")
+        .insert({
           userId: user.id,
           title: "📊 Daily Summary",
           message: `Today: ${completedTasks} tasks completed, ${checkIns.length} check-ins, ${avgRating}/10 avg rating. Great work!`,
           type: "DAILY_SUMMARY",
           actionUrl: "/dashboard",
-        },
-      });
+        });
     }
 
     console.log(`✅ Sent daily digest to ${users.length} users`);

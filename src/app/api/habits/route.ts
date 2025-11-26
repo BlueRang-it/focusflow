@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { z } from "zod";
 
 const createHabitSchema = z.object({
@@ -20,9 +20,11 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -31,22 +33,31 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const isActive = searchParams.get("isActive");
 
-    const habits = await prisma.habit.findMany({
-      where: {
-        userId: user.id,
-        ...(isActive !== null && { isActive: isActive === "true" }),
-      },
-      include: {
-        goal: true,
-        logs: {
-          orderBy: { date: "desc" },
-          take: 30,
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    let query = supabase
+      .from("habits")
+      .select(`
+        *,
+        goal:goals(*),
+        logs:habit_logs(*)
+      `)
+      .eq("userId", user.id)
+      .order("createdAt", { ascending: false });
+    
+    if (isActive !== null) {
+      query = query.eq("isActive", isActive === "true");
+    }
 
-    return NextResponse.json(habits);
+    const { data: habits } = await query;
+    
+    // Sort logs for each habit
+    const habitsWithSortedLogs = habits?.map(habit => ({
+      ...habit,
+      logs: habit.logs?.sort((a: any, b: any) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ).slice(0, 30) || []
+    })) || [];
+
+    return NextResponse.json(habitsWithSortedLogs);
   } catch (error) {
     console.error("Get habits error:", error);
     return NextResponse.json(
@@ -64,9 +75,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -75,15 +88,19 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validatedData = createHabitSchema.parse(body);
 
-    const habit = await prisma.habit.create({
-      data: {
+    const { data: habit, error: createError } = await supabase
+      .from("habits")
+      .insert({
         userId: user.id,
         ...validatedData,
-      },
-      include: {
-        goal: true,
-      },
-    });
+      })
+      .select(`
+        *,
+        goal:goals(*)
+      `)
+      .single();
+    
+    if (createError) throw createError;
 
     return NextResponse.json(habit, { status: 201 });
   } catch (error) {

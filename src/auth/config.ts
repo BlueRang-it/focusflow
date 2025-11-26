@@ -1,7 +1,7 @@
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 // No Prisma adapter used in Supabase-only setup
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -27,9 +27,11 @@ const providers: any[] = [
 
       const { email, password } = validatedCredentials.data;
 
-      const user = await prisma.user.findUnique({
-        where: { email },
-      });
+      const { data: user } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", email)
+        .single();
 
       if (!user || !user.password) {
         console.log("❌ User not found or no password:", email);

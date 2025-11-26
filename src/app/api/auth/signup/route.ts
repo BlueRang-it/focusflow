@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 

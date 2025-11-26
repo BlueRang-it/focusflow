@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
 export async function PATCH(
   req: Request,
@@ -14,17 +14,21 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const notification = await prisma.notification.findUnique({
-      where: { id },
-    });
+    const { data: notification } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("id", id)
+      .single();
 
     if (!notification || notification.userId !== user.id) {
       return NextResponse.json(
@@ -36,13 +40,17 @@ export async function PATCH(
     const body = await req.json();
     const { isRead } = body;
 
-    const updatedNotification = await prisma.notification.update({
-      where: { id },
-      data: {
+    const { data: updatedNotification, error } = await supabase
+      .from("notifications")
+      .update({
         isRead: isRead ?? true,
-        readAt: isRead ? new Date() : null,
-      },
-    });
+        readAt: isRead ? new Date().toISOString() : null,
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(updatedNotification);
   } catch (error) {
@@ -66,17 +74,21 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const notification = await prisma.notification.findUnique({
-      where: { id },
-    });
+    const { data: notification } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("id", id)
+      .single();
 
     if (!notification || notification.userId !== user.id) {
       return NextResponse.json(
@@ -85,9 +97,12 @@ export async function DELETE(
       );
     }
 
-    await prisma.notification.delete({
-      where: { id },
-    });
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

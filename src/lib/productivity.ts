@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { startOfDay, endOfDay } from "date-fns";
 
 type TaskLite = { status: string; timeSpent?: number; createdAt: Date; dueDate?: Date | null; priority: string };
@@ -8,21 +8,29 @@ export const calculateDailyProgress = async (userId: string) => {
   const today = startOfDay(new Date());
   const endOfToday = endOfDay(new Date());
 
-  const [tasks, checkIns, user] = await Promise.all([
-    prisma.task.findMany({
-      where: {
-        userId,
-        createdAt: { gte: today, lte: endOfToday },
-      },
-    }),
-    prisma.checkIn.findMany({
-      where: {
-        userId,
-        createdAt: { gte: today, lte: endOfToday },
-      },
-    }),
-    prisma.user.findUnique({ where: { id: userId } }),
+  const [tasksRes, checkInsRes, userRes] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select("*")
+      .eq("userId", userId)
+      .gte("createdAt", today.toISOString())
+      .lte("createdAt", endOfToday.toISOString()),
+    supabase
+      .from("check_ins")
+      .select("*")
+      .eq("userId", userId)
+      .gte("createdAt", today.toISOString())
+      .lte("createdAt", endOfToday.toISOString()),
+    supabase
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .single(),
   ]);
+
+  const tasks = tasksRes.data || [];
+  const checkIns = checkInsRes.data || [];
+  const user = userRes.data;
 
   const completedTasks = tasks.filter((t: TaskLite) => t.status === "COMPLETED").length;
   const totalTasks = tasks.length;
@@ -55,12 +63,14 @@ export const calculatePace = async (
   const endOfToday = endOfDay(new Date());
   const now = new Date();
 
-  const tasks = await prisma.task.findMany({
-    where: {
-      userId,
-      createdAt: { gte: today, lte: endOfToday },
-    },
-  });
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("userId", userId)
+    .gte("createdAt", today.toISOString())
+    .lte("createdAt", endOfToday.toISOString());
+  
+  if (!tasks) return { hoursLogged: 0, pace: "ON_TRACK", hoursRemaining: goalHours };
 
   const hoursLogged =
     tasks.reduce((sum: number, t: TaskLite) => sum + (t.timeSpent || 0), 0) / 60;
@@ -93,9 +103,11 @@ export const calculatePace = async (
 };
 
 export const calculateStreakAndAchievements = async (userId: string) => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .single();
 
   if (!user) return null;
 
@@ -109,12 +121,15 @@ export const calculateStreakAndAchievements = async (userId: string) => {
     const endOfDay = new Date(currentDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const checkIn = await prisma.checkIn.findFirst({
-      where: {
-        userId,
-        createdAt: { gte: startOfDay, lte: endOfDay },
-      },
-    });
+    const { data: checkIns } = await supabase
+      .from("check_ins")
+      .select("*")
+      .eq("userId", userId)
+      .gte("createdAt", startOfDay.toISOString())
+      .lte("createdAt", endOfDay.toISOString())
+      .limit(1);
+    
+    const checkIn = checkIns?.[0];
 
     if (!checkIn) break;
 
@@ -124,10 +139,10 @@ export const calculateStreakAndAchievements = async (userId: string) => {
 
   // Update streak in user record
   if (streak > user.longestStreak) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { longestStreak: streak },
-    });
+    await supabase
+      .from("users")
+      .update({ longestStreak: streak })
+      .eq("id", userId);
   }
 
   return { currentStreak: streak, longestStreak: user.longestStreak };
@@ -178,13 +193,15 @@ export const getTopPriorityTask = async (userId: string) => {
   const today = startOfDay(new Date());
   const endOfToday = endOfDay(new Date());
 
-  const tasks = await prisma.task.findMany({
-    where: {
-      userId,
-      status: { not: "COMPLETED" },
-      createdAt: { gte: today, lte: endOfToday },
-    },
-  });
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("userId", userId)
+    .neq("status", "COMPLETED")
+    .gte("createdAt", today.toISOString())
+    .lte("createdAt", endOfToday.toISOString());
+  
+  if (!tasks || tasks.length === 0) return null;
 
   const weight: Record<string, number> = { LOW: 0, MEDIUM: 1, HIGH: 2, URGENT: 3 } as const;
   const sorted = tasks.sort((a: TaskLite, b: TaskLite) => {

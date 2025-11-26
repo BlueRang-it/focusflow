@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { z } from "zod";
 
 const updateHabitSchema = z.object({
@@ -25,17 +25,21 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const habit = await prisma.habit.findUnique({
-      where: { id },
-    });
+    const { data: habit } = await supabase
+      .from("habits")
+      .select("*")
+      .eq("id", id)
+      .single();
 
     if (!habit || habit.userId !== user.id) {
       return NextResponse.json({ error: "Habit not found" }, { status: 404 });
@@ -44,19 +48,28 @@ export async function PATCH(
     const body = await req.json();
     const validatedData = updateHabitSchema.parse(body);
 
-    const updatedHabit = await prisma.habit.update({
-      where: { id },
-      data: validatedData,
-      include: {
-        goal: true,
-        logs: {
-          orderBy: { date: "desc" },
-          take: 30,
-        },
-      },
-    });
+    const { data: updatedHabit, error: updateError } = await supabase
+      .from("habits")
+      .update(validatedData)
+      .eq("id", id)
+      .select(`
+        *,
+        goal:goals(*),
+        logs:habit_logs(*)
+      `)
+      .single();
 
-    return NextResponse.json(updatedHabit);
+    if (updateError) throw updateError;
+
+    // Sort and limit logs
+    const habitWithSortedLogs = {
+      ...updatedHabit,
+      logs: updatedHabit.logs?.sort((a: any, b: any) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ).slice(0, 30) || []
+    };
+
+    return NextResponse.json(habitWithSortedLogs);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -85,25 +98,32 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const habit = await prisma.habit.findUnique({
-      where: { id },
-    });
+    const { data: habit } = await supabase
+      .from("habits")
+      .select("*")
+      .eq("id", id)
+      .single();
 
     if (!habit || habit.userId !== user.id) {
       return NextResponse.json({ error: "Habit not found" }, { status: 404 });
     }
 
-    await prisma.habit.delete({
-      where: { id },
-    });
+    const { error } = await supabase
+      .from("habits")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

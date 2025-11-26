@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { z } from "zod";
 
 const createNotificationSchema = z.object({
@@ -29,9 +29,11 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -41,16 +43,20 @@ export async function GET(req: Request) {
     const isRead = searchParams.get("isRead");
     const limit = parseInt(searchParams.get("limit") || "20");
 
-    const notifications = await prisma.notification.findMany({
-      where: {
-        userId: user.id,
-        ...(isRead !== null && { isRead: isRead === "true" }),
-      },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-    });
+    let query = supabase
+      .from("notifications")
+      .select("*")
+      .eq("userId", user.id)
+      .order("createdAt", { ascending: false })
+      .limit(limit);
 
-    return NextResponse.json(notifications);
+    if (isRead !== null) {
+      query = query.eq("isRead", isRead === "true");
+    }
+
+    const { data: notifications } = await query;
+
+    return NextResponse.json(notifications || []);
   } catch (error) {
     console.error("Get notifications error:", error);
     return NextResponse.json(
@@ -68,9 +74,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -79,15 +87,19 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validatedData = createNotificationSchema.parse(body);
 
-    const notification = await prisma.notification.create({
-      data: {
+    const { data: notification, error } = await supabase
+      .from("notifications")
+      .insert({
         userId: user.id,
         ...validatedData,
         expiresAt: validatedData.expiresAt
-          ? new Date(validatedData.expiresAt)
-          : undefined,
-      },
-    });
+          ? new Date(validatedData.expiresAt).toISOString()
+          : null,
+      })
+      .select("*")
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(notification, { status: 201 });
   } catch (error) {

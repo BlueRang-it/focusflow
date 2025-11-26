@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { z } from "zod";
 import { startOfWeek, endOfWeek, subDays } from "date-fns";
 
@@ -27,9 +27,11 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -38,13 +40,14 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get("limit") || "10");
 
-    const reviews = await prisma.weeklyReview.findMany({
-      where: { userId: user.id },
-      orderBy: { weekStartDate: "desc" },
-      take: limit,
-    });
+    const { data: reviews } = await supabase
+      .from("weekly_reviews")
+      .select("*")
+      .eq("userId", user.id)
+      .order("weekStartDate", { ascending: false })
+      .limit(limit);
 
-    return NextResponse.json(reviews);
+    return NextResponse.json(reviews || []);
   } catch (error) {
     console.error("Get weekly reviews error:", error);
     return NextResponse.json(
@@ -62,9 +65,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", session.user.email)
+      .single();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -77,27 +82,24 @@ export async function POST(req: Request) {
     const weekEnd = new Date(validatedData.weekEndDate);
 
     // Calculate metrics for the week
-    const [completedTasks, checkIns] = await Promise.all([
-      prisma.task.findMany({
-        where: {
-          userId: user.id,
-          status: "COMPLETED",
-          completedAt: {
-            gte: weekStart,
-            lte: weekEnd,
-          },
-        },
-      }),
-      prisma.checkIn.findMany({
-        where: {
-          userId: user.id,
-          createdAt: {
-            gte: weekStart,
-            lte: weekEnd,
-          },
-        },
-      }),
+    const [tasksRes, checkInsRes] = await Promise.all([
+      supabase
+        .from("tasks")
+        .select("*")
+        .eq("userId", user.id)
+        .eq("status", "COMPLETED")
+        .gte("completedAt", weekStart.toISOString())
+        .lte("completedAt", weekEnd.toISOString()),
+      supabase
+        .from("check_ins")
+        .select("*")
+        .eq("userId", user.id)
+        .gte("createdAt", weekStart.toISOString())
+        .lte("createdAt", weekEnd.toISOString()),
     ]);
+
+    const completedTasks = tasksRes.data || [];
+    const checkIns = checkInsRes.data || [];
 
     const averageProductivity =
       checkIns.length > 0
@@ -117,11 +119,12 @@ export async function POST(req: Request) {
       checkIns.length
     );
 
-    const review = await prisma.weeklyReview.create({
-      data: {
+    const { data: review, error } = await supabase
+      .from("weekly_reviews")
+      .insert({
         userId: user.id,
-        weekStartDate: weekStart,
-        weekEndDate: weekEnd,
+        weekStartDate: weekStart.toISOString(),
+        weekEndDate: weekEnd.toISOString(),
         whatWorkedWell: validatedData.whatWorkedWell,
         whatDidntWork: validatedData.whatDidntWork,
         improvements: validatedData.improvements,
@@ -133,16 +136,19 @@ export async function POST(req: Request) {
         averageProductivity,
         totalHoursLogged,
         generatedInsights: insights,
-      },
-    });
+      })
+      .select("*")
+      .single();
+
+    if (error) throw error;
 
     // Award XP for completing weekly review
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        xp: { increment: 50 },
-      },
-    });
+    await supabase
+      .from("users")
+      .update({
+        xp: (user.xp || 0) + 50,
+      })
+      .eq("id", user.id);
 
     return NextResponse.json(review, { status: 201 });
   } catch (error) {
