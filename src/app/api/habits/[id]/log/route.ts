@@ -124,7 +124,7 @@ export async function POST(
       data: {
         currentStreak,
         longestStreak,
-        totalCompleted: allLogs.reduce((sum, log) => sum + log.count, 0),
+        totalCompleted: allLogs.reduce((sum: number, log: { count: number }) => sum + log.count, 0),
       },
     });
 
