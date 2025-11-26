@@ -250,7 +250,7 @@ export default function Dashboard() {
             value={dailyProgress?.currentStreak || 0}
             unit="days"
             icon="🔥"
-            trend={dailyProgress?.currentStreak ?? 0 > 0 ? "up" : "neutral"}
+            trend={(dailyProgress?.currentStreak ?? 0) > 0 ? "up" : "neutral"}
           />
           <StatBox
             label="Check-ins"
