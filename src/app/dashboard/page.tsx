@@ -15,6 +15,7 @@ import ProductivityHeatmap from "@/components/ProductivityHeatmap";
 import AIInsights from "@/components/AIInsights";
 import QuickAccessMenu from "@/components/QuickAccessMenu";
 import BackToTop from "@/components/BackToTop";
+import HelpTooltip from "@/components/HelpTooltip";
 import { format, subDays } from "date-fns";
 
 interface DailyProgress {
@@ -248,14 +249,29 @@ export default function EnhancedDashboard() {
       <div className="max-w-[1800px] mx-auto">
         {/* Header with Real-time Clock */}
         <div className="mb-8 flex justify-between items-start">
-          <div>
-            <h1 className="text-5xl font-bold text-white mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
-              Command Center
-            </h1>
-            <p className="text-gray-300 text-lg">Welcome back, {session.user?.name}! 👋</p>
-            <p className="text-gray-400 text-sm mt-1">
-              {format(currentTime, "EEEE, MMMM d, yyyy • h:mm:ss a")}
-            </p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-5xl font-bold text-white mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+                Command Center
+              </h1>
+              <p className="text-gray-300 text-lg">Welcome back, {session.user?.name}! 👋</p>
+              <p className="text-gray-400 text-sm mt-1">
+                {format(currentTime, "EEEE, MMMM d, yyyy • h:mm:ss a")}
+              </p>
+            </div>
+            <HelpTooltip
+              title="Dashboard Guide"
+              content={[
+                "Quick Actions: Check-in, Create tasks, View analytics, Journal",
+                "Focus Timer: 25-min Pomodoro sessions with breaks",
+                "Productivity Heatmap: 12-week activity visualization",
+                "AI Insights: Click 'Generate Insights' for recommendations",
+                "Level & XP: Earn XP by completing tasks, check-ins, habits",
+                "Quick Stats: Tasks, Streak, Check-ins, Productivity rating",
+                "Next Task: Shows your highest priority task",
+                "Workday Countdown: Time remaining until 5 PM"
+              ]}
+            />
           </div>
           
           {/* Workday Progress */}

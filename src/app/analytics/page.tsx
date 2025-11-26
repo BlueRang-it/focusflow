@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardContent } from "@/components/Card";
 import QuickAccessMenu from "@/components/QuickAccessMenu";
 import BackToTop from "@/components/BackToTop";
+import HelpTooltip from "@/components/HelpTooltip";
 import { format, subDays } from "date-fns";
 
 interface AnalyticsData {
@@ -74,9 +75,24 @@ export default function AnalyticsPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">📊 Analytics</h1>
-          <p className="text-gray-600">Track your productivity and progress</p>
+        <div className="mb-8 flex items-center gap-3">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">📊 Analytics</h1>
+            <p className="text-gray-600">Track your productivity and progress</p>
+          </div>
+          <HelpTooltip
+            title="How to Use Analytics"
+            content={[
+              "Select time period: Week (7 days), Month (30 days), Year (365 days)",
+              "Total Check-ins: Number of check-ins in selected period",
+              "Average Rating: Your productivity score (1-10 scale)",
+              "Hours Logged: Total time tracked on tasks",
+              "Tasks/Habits Completed: Your output metrics",
+              "Current Streak: Consecutive active days",
+              "Level & XP: Progress to next level (1000 XP per level)",
+              "Activity Trends: Daily check-ins and ratings over time"
+            ]}
+          />
         </div>
 
         {/* Period Selector */}

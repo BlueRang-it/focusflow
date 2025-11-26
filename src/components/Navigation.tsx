@@ -52,12 +52,12 @@ export default function Navigation() {
               ⚡ FocusFlow Pro
             </button>
             
-            {/* Digital Clock */}
-            <div className="hidden md:flex flex-col items-center bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-lg border border-blue-200">
-              <div className="text-xl font-bold text-gray-900 font-mono tracking-wider">
+            {/* Digital Clock - Enhanced */}
+            <div className="hidden md:flex flex-col items-center bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 rounded-xl shadow-lg">
+              <div className="text-3xl font-bold text-white font-mono tracking-wider">
                 {format(currentTime, "HH:mm:ss")}
               </div>
-              <div className="text-xs text-gray-600">
+              <div className="text-sm text-blue-100 font-semibold">
                 {format(currentTime, "EEE, MMM d")}
               </div>
             </div>
@@ -110,13 +110,13 @@ export default function Navigation() {
 
         {/* Mobile Navigation & Clock */}
         <div className="lg:hidden pb-3">
-          {/* Mobile Clock */}
+          {/* Mobile Clock - Enhanced */}
           <div className="flex justify-center mb-3 md:hidden">
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-lg border border-blue-200">
-              <div className="text-lg font-bold text-gray-900 font-mono tracking-wider text-center">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 rounded-xl shadow-lg w-full max-w-sm">
+              <div className="text-2xl font-bold text-white font-mono tracking-wider text-center">
                 {format(currentTime, "HH:mm:ss")}
               </div>
-              <div className="text-xs text-gray-600 text-center">
+              <div className="text-sm text-blue-100 text-center font-semibold">
                 {format(currentTime, "EEE, MMM d, yyyy")}
               </div>
             </div>

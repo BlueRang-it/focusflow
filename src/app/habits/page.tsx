@@ -6,6 +6,7 @@ import HabitCard from "@/components/HabitCard";
 import { Card } from "@/components/Card";
 import QuickAccessMenu from "@/components/QuickAccessMenu";
 import BackToTop from "@/components/BackToTop";
+import HelpTooltip from "@/components/HelpTooltip";
 
 interface Habit {
   id: string;
@@ -126,13 +127,28 @@ export default function HabitsPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Habits & Routines
-            </h1>
-            <p className="text-gray-600">
-              Build consistency and track your daily habits
-            </p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Habits & Routines
+              </h1>
+              <p className="text-gray-600">
+                Build consistency and track your daily habits
+              </p>
+            </div>
+            <HelpTooltip
+              title="How to Use Habits"
+              content={[
+                "Click '+ New Habit' to create a habit",
+                "Enter name, description, category, and frequency",
+                "Frequency: Daily, Weekly, or Multiple Times Daily",
+                "Click 'Log' button on habit card to mark as complete",
+                "Track your current streak and longest streak",
+                "View total completions for each habit",
+                "Delete habits you no longer want to track",
+                "Inactive habits are shown separately at bottom"
+              ]}
+            />
           </div>
           <button
             onClick={() => setShowCreateModal(true)}

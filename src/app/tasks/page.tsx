@@ -7,6 +7,7 @@ import { Card, CardHeader, CardContent } from "@/components/Card";
 import { Button } from "@/components/Button";
 import QuickAccessMenu from "@/components/QuickAccessMenu";
 import BackToTop from "@/components/BackToTop";
+import HelpTooltip from "@/components/HelpTooltip";
 import { format } from "date-fns";
 
 interface Task {
@@ -179,9 +180,24 @@ export default function TasksPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">📋 Tasks</h1>
-            <p className="text-gray-600">Manage your tasks and stay organized</p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">📋 Tasks</h1>
+              <p className="text-gray-600">Manage your tasks and stay organized</p>
+            </div>
+            <HelpTooltip
+              title="How to Use Tasks"
+              content={[
+                "Click '➕ New Task' to create a task",
+                "Enter title, description, priority, and due date",
+                "Priority: URGENT (red), HIGH (orange), MEDIUM (yellow), LOW (green)",
+                "Use filters to view: ALL, TODO, IN_PROGRESS, COMPLETED",
+                "Click '▶ Start' to begin working on a task",
+                "Click '✓ Complete' when finished",
+                "Days remaining shows urgency (red = overdue, orange = today)",
+                "Delete tasks using 🗑️ button"
+              ]}
+            />
           </div>
           <Button onClick={() => setShowNewTask(true)}>
             ➕ New Task

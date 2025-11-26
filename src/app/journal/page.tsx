@@ -7,6 +7,7 @@ import { Card, CardHeader, CardContent } from "@/components/Card";
 import { Button } from "@/components/Button";
 import QuickAccessMenu from "@/components/QuickAccessMenu";
 import BackToTop from "@/components/BackToTop";
+import HelpTooltip from "@/components/HelpTooltip";
 import { format } from "date-fns";
 
 interface JournalEntry {
@@ -102,9 +103,23 @@ export default function JournalPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">📔 Journal</h1>
-            <p className="text-gray-600">Reflect on your day and track your thoughts</p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">📔 Journal</h1>
+              <p className="text-gray-600">Reflect on your day and track your thoughts</p>
+            </div>
+            <HelpTooltip
+              title="How to Use Journal"
+              content={[
+                "Click '✏️ New Entry' to start journaling",
+                "Select your mood: Very Happy 🤩, Happy 😊, Neutral 😐, Unhappy 😢, Very Unhappy 😰",
+                "Write your thoughts, reflections, or daily notes",
+                "Use reflection prompts for inspiration",
+                "Entries appear in timeline view (newest first)",
+                "Track emotional patterns over time",
+                "No character limit - write as much as you need"
+              ]}
+            />
           </div>
           <Button onClick={() => setShowNewEntry(true)}>
             ✏️ New Entry
