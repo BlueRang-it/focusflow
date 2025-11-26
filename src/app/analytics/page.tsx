@@ -47,10 +47,13 @@ export default function AnalyticsPage() {
     if (!session?.user?.id) return;
 
     try {
+      // Include userId in API call
       const response = await fetch(`/api/analytics?period=${period}&userId=${session.user.id}`);
       if (response.ok) {
         const data = await response.json();
         setAnalytics(data);
+      } else {
+        console.error("Analytics API error:", response.status, await response.text());
       }
     } catch (error) {
       console.error("Error fetching analytics:", error);

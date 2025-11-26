@@ -59,10 +59,16 @@ export default function TasksPage() {
     if (!newTask.title.trim()) return;
 
     try {
+      // Convert date to ISO datetime for API
+      const taskData = {
+        ...newTask,
+        dueDate: newTask.dueDate ? new Date(newTask.dueDate).toISOString() : undefined
+      };
+
       const response = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTask),
+        body: JSON.stringify(taskData),
       });
 
       if (response.ok) {
@@ -124,6 +130,28 @@ export default function TasksPage() {
       case "TODO": return "bg-gray-100 text-gray-800";
       case "CANCELLED": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getDaysRemaining = (dueDate: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dueDate);
+    due.setHours(0, 0, 0, 0);
+    
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      return { text: `${Math.abs(diffDays)} days overdue`, color: "text-red-600 font-bold", urgent: true };
+    } else if (diffDays === 0) {
+      return { text: "Due today", color: "text-orange-600 font-bold", urgent: true };
+    } else if (diffDays === 1) {
+      return { text: "Due tomorrow", color: "text-yellow-600 font-semibold", urgent: false };
+    } else if (diffDays <= 3) {
+      return { text: `${diffDays} days left`, color: "text-yellow-600", urgent: false };
+    } else {
+      return { text: `${diffDays} days left`, color: "text-gray-600", urgent: false };
     }
   };
 
@@ -234,9 +262,19 @@ export default function TasksPage() {
                         <p className="text-gray-600 mb-3">{task.description}</p>
                       )}
                       {task.dueDate && (
-                        <p className="text-sm text-gray-500">
-                          📅 Due: {format(new Date(task.dueDate), "MMM d, yyyy")}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-gray-500">
+                            📅 Due: {format(new Date(task.dueDate), "MMM d, yyyy")}
+                          </p>
+                          {(() => {
+                            const remaining = getDaysRemaining(task.dueDate);
+                            return (
+                              <span className={`text-xs ${remaining.color} ${remaining.urgent ? 'animate-pulse' : ''}`}>
+                                ({remaining.text})
+                              </span>
+                            );
+                          })()}
+                        </div>
                       )}
                     </div>
                     <div className="flex gap-2">

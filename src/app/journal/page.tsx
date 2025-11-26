@@ -40,7 +40,8 @@ export default function JournalPage() {
       const response = await fetch("/api/journal");
       if (response.ok) {
         const data = await response.json();
-        setEntries(data);
+        // API returns { entries, total, hasMore } so extract entries array
+        setEntries(data.entries || data);
       }
     } catch (error) {
       console.error("Error fetching journal entries:", error);
@@ -70,13 +71,22 @@ export default function JournalPage() {
   };
 
   const moodEmojis = {
-    "amazing": "🤩",
-    "happy": "😊",
-    "good": "🙂",
-    "neutral": "😐",
-    "sad": "😢",
-    "stressed": "😰",
-    "tired": "😴",
+    "VERY_HAPPY": "🤩",
+    "HAPPY": "😊",
+    "NEUTRAL": "😐",
+    "UNHAPPY": "😢",
+    "VERY_UNHAPPY": "😰",
+  };
+
+  const getMoodLabel = (mood: string) => {
+    const labels: Record<string, string> = {
+      "VERY_HAPPY": "Very Happy",
+      "HAPPY": "Happy",
+      "NEUTRAL": "Neutral",
+      "UNHAPPY": "Unhappy",
+      "VERY_UNHAPPY": "Very Unhappy",
+    };
+    return labels[mood] || mood;
   };
 
   if (status === "loading" || loading) {
@@ -143,8 +153,8 @@ export default function JournalPage() {
                       </div>
                     </div>
                     {entry.mood && (
-                      <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium capitalize">
-                        {entry.mood}
+                      <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+                        {getMoodLabel(entry.mood)}
                       </span>
                     )}
                   </div>
@@ -180,7 +190,7 @@ export default function JournalPage() {
                           }`}
                         >
                           <span className="text-2xl">{emoji}</span>
-                          <span className="text-xs ml-2 capitalize">{mood}</span>
+                          <span className="text-xs ml-2">{getMoodLabel(mood)}</span>
                         </button>
                       ))}
                     </div>
