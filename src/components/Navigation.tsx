@@ -16,8 +16,11 @@ export default function Navigation() {
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: "🏠" },
+    { name: "Tasks", path: "/tasks", icon: "📋" },
     { name: "Habits", path: "/habits", icon: "🎯" },
-    { name: "Weekly Review", path: "/weekly-review", icon: "📊" },
+    { name: "Journal", path: "/journal", icon: "📔" },
+    { name: "Analytics", path: "/analytics", icon: "📊" },
+    { name: "Weekly Review", path: "/weekly-review", icon: "📈" },
     { name: "Settings", path: "/settings", icon: "⚙️" },
   ];
 
