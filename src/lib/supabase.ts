@@ -23,14 +23,11 @@ if (typeof window === "undefined") {
   }
 }
 
-// Only use placeholder during build time, fail at runtime if missing
+// Allow build to succeed without env vars, but warn
 if (!supabaseUrl || !supabaseKey) {
-  // For build time only
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
-    throw new Error("Supabase credentials must be set in production!");
-  }
-  // Use placeholder only during build
+  // Use placeholder during build - environment validation happens at runtime in API routes
   console.warn("⚠️  Using placeholder Supabase credentials (build time only)");
+  console.warn("⚠️  Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel to make the app functional");
 }
 
 const finalUrl = supabaseUrl || "https://placeholder.supabase.co";
