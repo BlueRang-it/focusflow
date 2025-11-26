@@ -217,7 +217,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -229,9 +229,9 @@ export default function Dashboard() {
 
         {/* Motivational Message */}
         {motivationalMessage && (
-          <Card className="mb-6 bg-linear-to-r from-blue-500 to-indigo-600 text-white shadow-lg">
+          <Card className="mb-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg">
             <CardContent>
-              <p className="text-lg font-semibold">{motivationalMessage}</p>
+              <p className="text-lg font-semibold text-white">{motivationalMessage}</p>
             </CardContent>
           </Card>
         )}
