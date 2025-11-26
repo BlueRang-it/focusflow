@@ -149,18 +149,14 @@ export default function EnhancedDashboard() {
 
   const calculateWorkdayRemaining = () => {
     const now = new Date();
-    const endOfWorkday = new Date();
-    endOfWorkday.setHours(17, 0, 0, 0); // 5 PM
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999); // End of 24-hour day
 
-    const diffMs = endOfWorkday.getTime() - now.getTime();
+    const diffMs = endOfDay.getTime() - now.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
 
-    if (diffMs <= 0) {
-      setWorkdayRemaining("Workday Complete");
-    } else {
-      setWorkdayRemaining(`${diffHours}h ${diffMinutes}m remaining`);
-    }
+    setWorkdayRemaining(`${diffHours}h ${diffMinutes}m remaining today`);
   };
 
   const generateMotivationalMessage = (paceStatus: string) => {
@@ -274,54 +270,54 @@ export default function EnhancedDashboard() {
             />
           </div>
           
-          {/* Workday Progress */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+          {/* 24-Hour Day Progress */}
+          <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-6 border-2 border-yellow-400 shadow-xl">
             <div className="text-center">
-              <div className="text-4xl font-bold text-white mb-1">
+              <div className="text-4xl font-bold text-white mb-1 drop-shadow-lg">
                 {workdayRemaining}
               </div>
-              <div className="text-gray-300 text-sm">Until end of workday</div>
+              <div className="text-white text-sm font-semibold">Until end of day</div>
             </div>
           </div>
         </div>
 
-        {/* Motivational Banner */}
+        {/* Motivational Banner - Enhanced Visibility */}
         {motivationalMessage && (
-          <Card className="mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white shadow-2xl border-0">
+          <Card className="mb-6 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white shadow-2xl border-4 border-yellow-300">
             <CardContent className="flex items-center gap-4 py-6">
-              <div className="text-5xl">{getPaceStatusIcon()}</div>
+              <div className="text-6xl drop-shadow-lg">{getPaceStatusIcon()}</div>
               <div>
-                <p className="text-xl font-semibold">{motivationalMessage}</p>
-                <p className="text-blue-100 text-sm mt-1">
-                  Pace Status: <span className="font-semibold capitalize">{paceStatus}</span>
+                <p className="text-2xl font-bold drop-shadow-lg">{motivationalMessage}</p>
+                <p className="text-white text-base mt-2 font-semibold drop-shadow">
+                  Pace Status: <span className="font-bold capitalize bg-white/20 px-3 py-1 rounded-full">{paceStatus}</span>
                 </p>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Level & XP Progress - Prominent */}
+        {/* Level & XP Progress - Enhanced Visibility */}
         {userData && (
-          <Card className="mb-6 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white border-0 shadow-2xl">
+          <Card className="mb-6 bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 text-white border-4 border-green-300 shadow-2xl">
             <CardContent className="py-6">
               <div className="flex items-center gap-6">
-                <div className="text-7xl">⚡</div>
+                <div className="text-7xl drop-shadow-lg">⚡</div>
                 <div className="flex-1">
                   <div className="flex justify-between mb-3">
-                    <span className="text-3xl font-bold">Level {userData.level}</span>
-                    <span className="text-white/90 text-lg">{userData.xp} XP</span>
+                    <span className="text-4xl font-bold drop-shadow-lg">Level {userData.level}</span>
+                    <span className="text-white text-xl font-bold drop-shadow">{userData.xp} XP</span>
                   </div>
-                  <div className="w-full bg-white/30 rounded-full h-6 mb-2">
+                  <div className="w-full bg-white/40 rounded-full h-8 mb-2 border-2 border-white/50">
                     <div
-                      className="bg-white h-6 rounded-full transition-all duration-500 flex items-center justify-end pr-3"
+                      className="bg-yellow-300 h-8 rounded-full transition-all duration-500 flex items-center justify-end pr-3 shadow-inner"
                       style={{ width: `${((userData.xp % 1000) / 1000) * 100}%` }}
                     >
-                      <span className="text-orange-600 text-xs font-bold">
+                      <span className="text-green-900 text-sm font-bold drop-shadow">
                         {Math.floor(((userData.xp % 1000) / 1000) * 100)}%
                       </span>
                     </div>
                   </div>
-                  <p className="text-white/90 text-sm">
+                  <p className="text-white text-base font-semibold drop-shadow">
                     {1000 - (userData.xp % 1000)} XP to Level {userData.level + 1}
                   </p>
                 </div>
@@ -395,17 +391,20 @@ export default function EnhancedDashboard() {
           {/* Middle Column - Task Progress & Next Task */}
           <div className="lg:col-span-1 space-y-6">
             <Card className="bg-white/10 backdrop-blur-lg border-white/20">
-              <CardHeader title="📈 Today's Progress" subtitle="Keep pushing forward!" />
+              <div className="px-6 pt-6">
+                <h3 className="text-white text-xl font-bold drop-shadow-lg">📈 Today's Progress</h3>
+                <p className="text-yellow-300 text-base font-semibold drop-shadow">Keep pushing forward!</p>
+              </div>
               <CardContent>
                 <ProgressBar
                   progress={dailyProgress?.progressPercentage || 0}
                   showLabel={true}
                 />
                 <div className="mt-6 space-y-3">
-                  <div className="flex justify-between items-center p-4 bg-white/10 rounded-lg backdrop-blur">
-                    <span className="text-gray-200">Hours Logged</span>
-                    <span className="font-semibold text-white text-lg">
-                      {dailyProgress?.hoursLogged?.toFixed(1) || 0}h / 8h
+                  <div className="flex justify-between items-center p-4 bg-gradient-to-r from-indigo-500/30 to-purple-500/30 rounded-lg backdrop-blur border border-indigo-400/50">
+                    <span className="text-yellow-200 text-sm font-semibold drop-shadow">Hours Logged (24hr)</span>
+                    <span className="font-bold text-white text-xl drop-shadow-lg">
+                      {dailyProgress?.hoursLogged?.toFixed(1) || 0}h / 24h
                     </span>
                   </div>
                   {nextTask && (
@@ -474,27 +473,30 @@ export default function EnhancedDashboard() {
           <AIInsights userData={userData || undefined} dailyProgress={dailyProgress || undefined} />
         </div>
 
-        {/* Badges Section */}
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20">
-          <CardHeader title="🏆 Achievements & Badges" subtitle="Your accomplishments" />
+        {/* Badges Section - Enhanced */}
+        <Card className="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 border-4 border-purple-300 shadow-2xl">
+          <div className="px-6 pt-6">
+            <h3 className="text-white text-2xl font-bold drop-shadow-lg">🏆 Achievements & Badges</h3>
+            <p className="text-yellow-200 text-base font-semibold drop-shadow">Your accomplishments</p>
+          </div>
           <CardContent>
             {badges.length > 0 ? (
               <BadgeDisplay badges={badges} compact={false} />
             ) : (
-              <div className="text-center py-8 text-gray-300">
-                <p className="text-lg mb-3">Start earning badges by completing milestones!</p>
+              <div className="text-center py-8 text-white">
+                <p className="text-xl font-bold mb-3 drop-shadow-lg">Start earning badges by completing milestones!</p>
                 <div className="grid grid-cols-3 gap-4 mt-6 max-w-md mx-auto">
-                  <div className="p-4 bg-white/10 rounded-lg">
-                    <div className="text-3xl mb-2">🔥</div>
-                    <div className="text-xs">3-Day Streak</div>
+                  <div className="p-4 bg-white/20 rounded-lg border-2 border-white/30 backdrop-blur">
+                    <div className="text-4xl mb-2 drop-shadow">🔥</div>
+                    <div className="text-sm font-semibold text-white drop-shadow">3-Day Streak</div>
                   </div>
-                  <div className="p-4 bg-white/10 rounded-lg">
-                    <div className="text-3xl mb-2">✅</div>
-                    <div className="text-xs">First Check-in</div>
+                  <div className="p-4 bg-white/20 rounded-lg border-2 border-white/30 backdrop-blur">
+                    <div className="text-4xl mb-2 drop-shadow">✅</div>
+                    <div className="text-sm font-semibold text-white drop-shadow">First Check-in</div>
                   </div>
-                  <div className="p-4 bg-white/10 rounded-lg">
-                    <div className="text-3xl mb-2">📋</div>
-                    <div className="text-xs">Complete Task</div>
+                  <div className="p-4 bg-white/20 rounded-lg border-2 border-white/30 backdrop-blur">
+                    <div className="text-4xl mb-2 drop-shadow">📋</div>
+                    <div className="text-sm font-semibold text-white drop-shadow">Complete Task</div>
                   </div>
                 </div>
               </div>
