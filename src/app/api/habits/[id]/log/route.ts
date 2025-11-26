@@ -74,7 +74,7 @@ export async function POST(
     let longestStreak = 0;
     let tempStreak = 0;
     
-    const sortedLogs = allLogs.sort((a, b) => 
+    const sortedLogs = allLogs.sort((a: { date: Date | string }, b: { date: Date | string }) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 
