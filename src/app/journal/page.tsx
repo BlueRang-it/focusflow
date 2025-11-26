@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardContent } from "@/components/Card";
 import { Button } from "@/components/Button";
+import QuickAccessMenu from "@/components/QuickAccessMenu";
+import BackToTop from "@/components/BackToTop";
 import { format } from "date-fns";
 
 interface JournalEntry {
@@ -208,6 +210,12 @@ export default function JournalPage() {
             </Card>
           </div>
         )}
+
+        {/* Quick Access Menu */}
+        <QuickAccessMenu />
+
+        {/* Back to Top Button */}
+        <BackToTop />
       </div>
     </div>
   );

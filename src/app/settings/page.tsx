@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Card } from "@/components/Card";
+import QuickAccessMenu from "@/components/QuickAccessMenu";
+import BackToTop from "@/components/BackToTop";
 
 interface Preferences {
   enableEmailNotifications: boolean;
@@ -347,6 +349,12 @@ export default function SettingsPage() {
             {isSaving ? "Saving..." : "Save Settings"}
           </button>
         </div>
+
+        {/* Quick Access Menu */}
+        <QuickAccessMenu />
+
+        {/* Back to Top Button */}
+        <BackToTop />
       </div>
     </div>
   );

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Card } from "@/components/Card";
+import QuickAccessMenu from "@/components/QuickAccessMenu";
+import BackToTop from "@/components/BackToTop";
 import { startOfWeek, endOfWeek, format } from "date-fns";
 
 interface WeeklyReview {
@@ -437,6 +439,12 @@ export default function WeeklyReviewPage() {
             </div>
           </div>
         )}
+
+        {/* Quick Access Menu */}
+        <QuickAccessMenu />
+
+        {/* Back to Top Button */}
+        <BackToTop />
       </div>
     </div>
   );

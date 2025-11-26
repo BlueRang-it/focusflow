@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardContent } from "@/components/Card";
+import QuickAccessMenu from "@/components/QuickAccessMenu";
+import BackToTop from "@/components/BackToTop";
 import { format, subDays } from "date-fns";
 
 interface AnalyticsData {
@@ -205,6 +207,12 @@ export default function AnalyticsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Quick Access Menu */}
+        <QuickAccessMenu />
+
+        {/* Back to Top Button */}
+        <BackToTop />
       </div>
     </div>
   );

@@ -13,6 +13,8 @@ import AchievementToast from "@/components/AchievementToast";
 import FocusTimer from "@/components/FocusTimer";
 import ProductivityHeatmap from "@/components/ProductivityHeatmap";
 import AIInsights from "@/components/AIInsights";
+import QuickAccessMenu from "@/components/QuickAccessMenu";
+import BackToTop from "@/components/BackToTop";
 import { format, subDays } from "date-fns";
 
 interface DailyProgress {
@@ -500,6 +502,12 @@ export default function EnhancedDashboard() {
           achievement={achievement}
           onClose={() => setAchievement(null)}
         />
+
+        {/* Quick Access Menu */}
+        <QuickAccessMenu />
+
+        {/* Back to Top Button */}
+        <BackToTop />
       </div>
     </div>
   );

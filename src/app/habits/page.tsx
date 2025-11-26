@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import HabitCard from "@/components/HabitCard";
 import { Card } from "@/components/Card";
+import QuickAccessMenu from "@/components/QuickAccessMenu";
+import BackToTop from "@/components/BackToTop";
 
 interface Habit {
   id: string;
@@ -310,6 +312,12 @@ export default function HabitsPage() {
             </div>
           </div>
         )}
+
+        {/* Quick Access Menu */}
+        <QuickAccessMenu />
+
+        {/* Back to Top Button */}
+        <BackToTop />
       </div>
     </div>
   );
